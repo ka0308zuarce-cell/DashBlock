@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DashBlock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#171a26;
+    --bg-panel:#232842;
+    --bg-card:#2c3357;
+    --coral:#ff6b6b;
+    --turquoise:#4ecdc4;
+    --yellow:#ffe66d;
+    --purple:#a374ff;
+    --text-main:#f3f4fb;
+    --text-dim:#9aa0c3;
+    --radius:16px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Inter', sans-serif;
+    background:var(--bg-deep);
+    color:var(--text-main);
+    min-height:100vh;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(163,116,255,0.12), transparent 40%),
+      radial-gradient(circle at 85% 75%, rgba(78,205,196,0.12), transparent 40%);
+  }
+  h1,h2,h3,.brand{ font-family:'Baloo 2', cursive; }
+
+  /* ===== LAYOUT ===== */
+  .screen{ display:none; min-height:100vh; }
+  .screen.active{ display:flex; flex-direction:column; }
+
+  /* ===== TOP BAR ===== */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 28px; background:var(--bg-panel);
+    border-bottom:3px solid var(--purple);
+  }
+  .brand{ font-size:1.6rem; font-weight:800; letter-spacing:0.5px; }
+  .brand span{ color:var(--coral); }
+  .user-pill{
+    display:flex; align-items:center; gap:10px;
+    background:var(--bg-card); padding:6px 14px; border-radius:999px;
+    font-weight:600; font-size:0.95rem;
+  }
+  .avatar{
+    width:30px; height:30px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:0.9rem; color:#171a26;
+  }
+  .icon-btn{
+    background:none; border:none; color:var(--text-dim); cursor:pointer;
+    font-size:1.3rem; padding:4px 8px; border-radius:8px; transition:.15s;
+  }
+  .icon-btn:hover{ color:var(--coral); background:rgba(255,255,255,0.06); }
+
+  /* ===== AUTH ===== */
+  #screen-auth{ align-items:center; justify-content:center; }
+  .auth-box{
+    background:var(--bg-panel); border-radius:24px; padding:40px;
+    width:380px; max-width:90vw; text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,0.4);
+    border:3px solid var(--bg-card);
+  }
+  .auth-box h1{ font-size:2.4rem; margin-bottom:4px; }
+  .auth-box h1 span{ color:var(--turquoise); }
+  .auth-sub{ color:var(--text-dim); font-size:0.95rem; margin-bottom:24px; }
+  .tabs{ display:flex; background:var(--bg-card); border-radius:12px; padding:4px; margin-bottom:20px; }
+  .tab{
+    flex:1; padding:10px; border-radius:9px; cursor:pointer; font-weight:700;
+    text-align:center; color:var(--text-dim); transition:.15s; font-size:0.95rem;
+  }
+  .tab.active{ background:var(--purple); color:#fff; }
+  input[type=text], input[type=password]{
+    width:100%; padding:13px 16px; margin-bottom:14px; border-radius:12px;
+    border:2px solid var(--bg-card); background:var(--bg-deep); color:var(--text-main);
+    font-size:1rem; font-family:inherit; outline:none; transition:.15s;
+  }
+  input:focus{ border-color:var(--turquoise); }
+  .color-pick-label{ text-align:left; font-size:0.85rem; color:var(--text-dim); margin-bottom:8px; font-weight:600; }
+  .color-pick{ display:flex; gap:10px; margin-bottom:18px; justify-content:center; }
+  .swatch{
+    width:34px; height:34px; border-radius:10px; cursor:pointer;
+    border:3px solid transparent; transition:.15s;
+  }
+  .swatch.selected{ border-color:#fff; transform:scale(1.12); }
+  .btn{
+    width:100%; padding:13px; border-radius:12px; border:none; cursor:pointer;
+    font-weight:800; font-size:1.05rem; font-family:'Baloo 2', cursive;
+    color:#171a26; transition:.15s; letter-spacing:0.3px;
+  }
+  .btn:hover{ transform:translateY(-2px); filter:brightness(1.08); }
+  .btn:active{ transform:translateY(0); }
+  .btn-primary{ background:var(--turquoise); }
+  .btn-coral{ background:var(--coral); }
+  .btn-yellow{ background:var(--yellow); }
+  .btn-purple{ background:var(--purple); color:#fff; }
+  .auth-error{ color:var(--coral); font-size:0.85rem; margin-bottom:10px; min-height:18px; font-weight:600; }
+
+  /* ===== HOME ===== */
+  .home-body{ flex:1; padding:32px; max-width:1100px; margin:0 auto; width:100%; }
+  .home-header{ margin-bottom:28px; }
+  .home-header h2{ font-size:1.8rem; }
+  .home-header p{ color:var(--text-dim); margin-top:4px; }
+  .section-title{
+    display:flex; align-items:center; gap:10px; margin:32px 0 16px;
+    font-size:1.25rem;
+  }
+  .section-title .dot{
+    width:10px; height:10px; border-radius:50%;
+  }
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(190px,1fr)); gap:18px;
+  }
+  .game-card{
+    background:var(--bg-panel); border-radius:var(--radius); overflow:hidden;
+    cursor:pointer; transition:.18s; border:3px solid transparent;
+    display:flex; flex-direction:column;
+  }
+  .game-card:hover{ transform:translateY(-4px); border-color:var(--turquoise); }
+  .thumb{
+    height:110px; display:flex; align-items:center; justify-content:center;
+    font-size:2.6rem;
+  }
+  .game-info{ padding:12px 14px; }
+  .game-info h4{ font-size:1.05rem; margin-bottom:2px; }
+  .game-info .meta{ font-size:0.8rem; color:var(--text-dim); }
+  .empty-msg{
+    color:var(--text-dim); padding:24px; text-align:center; background:var(--bg-panel);
+    border-radius:var(--radius); border:2px dashed var(--bg-card);
+  }
+  .create-card{
+    border:2px dashed var(--bg-card); display:flex; align-items:center;
+    justify-content:center; flex-direction:column; gap:8px; color:var(--text-dim);
+    font-weight:700; min-height:170px; background:transparent;
+  }
+  .create-card:hover{ border-color:var(--coral); color:var(--coral); }
+  .create-card .plus{ font-size:2.2rem; }
+
+  /* ===== EDITOR ===== */
+  #screen-editor{ flex-direction:row; height:100vh; overflow:hidden; }
+  .editor-side{
+    width:230px; background:var(--bg-panel); padding:18px;
+    display:flex; flex-direction:column; gap:14px; overflow-y:auto;
+    border-right:3px solid var(--bg-card);
+  }
+  .editor-side h3{ font-size:1rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; }
+  .palette-item{
+    display:flex; align-items:center; gap:10px; padding:10px 12px;
+    background:var(--bg-card); border-radius:10px; cursor:grab; font-weight:600; font-size:0.92rem;
+    border:2px solid transparent; transition:.12s; user-select:none;
+  }
+  .palette-item:hover{ border-color:var(--turquoise); }
+  .palette-item .swatch-mini{ width:24px; height:24px; border-radius:6px; flex-shrink:0; font-size:14px; display:flex; align-items:center; justify-content:center;}
+  .editor-main{ flex:1; display:flex; flex-direction:column; }
+  .editor-topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 20px; background:var(--bg-panel); border-bottom:3px solid var(--bg-card);
+    gap:12px;
+  }
+  .editor-topbar input[type=text]{ margin:0; max-width:240px; padding:9px 14px; font-size:0.95rem; }
+  .editor-actions{ display:flex; gap:10px; }
+  .editor-actions .btn{ width:auto; padding:9px 18px; font-size:0.92rem; }
+  .editor-canvas-wrap{
+    flex:1; display:flex; align-items:center; justify-content:center; overflow:auto;
+    background:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size:40px 40px; background-color:var(--bg-deep);
+    padding:20px;
+  }
+  #grid{
+    display:grid; gap:2px; background:var(--bg-card); border-radius:8px; padding:6px;
+    box-shadow:0 10px 40px rgba(0,0,0,0.5);
+  }
+  .cell{
+    width:40px; height:40px; background:rgba(255,255,255,0.03); border-radius:4px;
+    display:flex; align-items:center; justify-content:center; font-size:1.3rem;
+    cursor:pointer; transition:.1s; position:relative;
+  }
+  .cell:hover{ background:rgba(255,255,255,0.08); }
+  .cell.filled-empty{ background:rgba(78,205,196,0.06); }
+  .editor-help{
+    padding:10px 20px; background:var(--bg-panel); color:var(--text-dim);
+    font-size:0.85rem; border-top:2px solid var(--bg-card);
+  }
+  .editor-help b{ color:var(--text-main); }
+
+  /* ===== PLAYER ===== */
+  #screen-player{ align-items:center; justify-content:center; }
+  .player-topbar{
+    position:absolute; top:0; left:0; right:0; display:flex;
+    align-items:center; justify-content:space-between; padding:14px 24px;
+    z-index:5;
+  }
+  .player-stats{
+    display:flex; gap:14px; font-family:'Baloo 2',cursive; font-size:1.1rem;
+  }
+  .player-stats span{ background:var(--bg-panel); padding:6px 14px; border-radius:999px; }
+  #gameCanvasWrap{ position:relative; }
+  canvas{ background:#0e1020; border-radius:12px; display:block; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+  .player-overlay{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:14px; background:rgba(10,12,24,0.85); border-radius:12px;
+    text-align:center; padding:20px;
+  }
+  .player-overlay h2{ font-size:2rem; }
+  .player-overlay .btn{ width:auto; padding:12px 28px; }
+  .swatch.locked{ cursor:not-allowed; }
+  .swatch.shake{ animation:shake 0.35s; }
+  @keyframes shake{
+    0%,100%{ transform:translateX(0); }
+    25%{ transform:translateX(-4px); }
+    75%{ transform:translateX(4px); }
+  }
+  .verified-badge{
+    color:var(--turquoise); font-size:0.95em; margin-left:2px; vertical-align:middle;
+  }
+  .unlock-toast{
+    position:fixed; top:18px; right:18px; background:var(--bg-panel);
+    border:2px solid var(--yellow); border-radius:12px; padding:14px 18px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4); z-index:100; max-width:280px;
+    animation:toast-in 0.3s ease-out;
+  }
+  .unlock-toast h4{ font-size:1rem; margin-bottom:4px; }
+  .unlock-toast p{ font-size:0.85rem; color:var(--text-dim); }
+  @keyframes toast-in{
+    from{ opacity:0; transform:translateY(-12px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .hidden{ display:none !important; }
+
+  /* ===== CUSTOMIZE MODAL ===== */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(10,12,24,0.7);
+    display:flex; align-items:center; justify-content:center; z-index:50;
+  }
+  .cube-preview-wrap{
+    display:flex; align-items:center; justify-content:center;
+    margin:14px 0 20px;
+  }
+  .cube-preview{
+    width:80px; height:80px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:2.4rem; box-shadow:0 10px 30px rgba(0,0,0,0.4);
+    transition:.15s;
+  }
+
+  /* responsive */
+  @media (max-width:700px){
+    #screen-editor{ flex-direction:column; }
+    .editor-side{ width:100%; flex-direction:row; overflow-x:auto; border-right:none; border-bottom:3px solid var(--bg-card); }
+    .palette-item{ flex-shrink:0; }
+    .home-body{ padding:18px; }
+  }
+
+  ::-webkit-scrollbar{ width:10px; height:10px; }
+  ::-webkit-scrollbar-thumb{ background:var(--bg-card); border-radius:8px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+</style>
+</head>
+<body>
+
+<!-- ===================== AUTH SCREEN ===================== -->
+<div id="screen-auth" class="screen active">
+  <div class="auth-box">
+    <h1>Dash<span>Block</span></h1>
+    <p class="auth-sub">Crea, juega y construye — todo sin conexión.</p>
+
+    <div class="tabs">
+      <div class="tab active" id="tab-login" onclick="switchTab('login')">Iniciar sesión</div>
+      <div class="tab" id="tab-register" onclick="switchTab('register')">Crear cuenta</div>
+    </div>
+
+    <div id="form-login">
+      <input type="text" id="login-username" placeholder="Nombre de usuario">
+      <input type="password" id="login-password" placeholder="Contraseña">
+      <div class="auth-error" id="login-error"></div>
+      <button class="btn btn-turquoise btn-primary" onclick="doLogin()">Entrar</button>
+    </div>
+
+    <div id="form-register" class="hidden">
+      <input type="text" id="reg-username" placeholder="Elige un nombre de usuario">
+      <input type="password" id="reg-password" placeholder="Crea una contraseña">
+      <p class="color-pick-label">Elige el color de tu cubo</p>
+      <div class="color-pick" id="color-pick"></div>
+      <p class="color-pick-label">Elige la skin de tu cubo</p>
+      <div class="color-pick" id="skin-pick"></div>
+      <div class="auth-error" id="reg-error"></div>
+      <button class="btn btn-coral" onclick="doRegister()">Crear cuenta y jugar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== HOME SCREEN ===================== -->
+<div id="screen-home" class="screen">
+  <div class="topbar">
+    <div class="brand">Dash<span>Block</span></div>
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div class="user-pill">
+        <div class="avatar" id="home-avatar"></div>
+        <span id="home-username"></span>
+      </div>
+      <button class="icon-btn" title="Personalizar cubo" onclick="openCustomize()">🎨</button>
+      <button class="icon-btn" title="Cerrar sesión" onclick="logout()">⏏</button>
+    </div>
+  </div>
+  <div class="home-body">
+    <div class="home-header">
+      <h2>¡Hola, <span id="home-greet-name"></span>! 👋</h2>
+      <p>Elige un juego para jugar o crea uno nuevo.</p>
+    </div>
+
+    <div class="section-title"><div class="dot" style="background:var(--turquoise)"></div> Juegos destacados</div>
+    <div class="grid" id="featured-grid"></div>
+
+    <div class="section-title"><div class="dot" style="background:var(--coral)"></div> Mis creaciones</div>
+    <div class="grid" id="mygames-grid"></div>
+  </div>
+</div>
+
+<!-- ===================== EDITOR SCREEN ===================== -->
+<div id="screen-editor" class="screen">
+  <div class="editor-side">
+    <h3>Bloques</h3>
+    <div class="palette-item" draggable="true" data-type="empty">
+      <div class="swatch-mini" style="background:transparent; border:2px dashed #555;"></div> Vacío / Borrar
+    </div>
+    <div class="palette-item" draggable="true" data-type="ground">
+      <div class="swatch-mini" style="background:#6b7a99;"></div> Plataforma
+    </div>
+    <div class="palette-item" draggable="true" data-type="player">
+      <div class="swatch-mini" style="background:var(--turquoise);">🙂</div> Jugador (inicio)
+    </div>
+    <div class="palette-item" draggable="true" data-type="coin">
+      <div class="swatch-mini" style="background:var(--yellow);">★</div> Moneda (+10 pts)
+    </div>
+    <div class="palette-item" draggable="true" data-type="spike">
+      <div class="swatch-mini" style="background:var(--coral);">▲</div> Pincho (pierdes vida)
+    </div>
+    <div class="palette-item" draggable="true" data-type="goal">
+      <div class="swatch-mini" style="background:var(--purple);">🏁</div> Meta (ganar)
+    </div>
+    <h3 style="margin-top:6px;">Tamaño del mapa</h3>
+    <div style="display:flex; gap:8px;">
+      <input type="text" id="grid-cols" value="14" style="padding:8px; margin:0; font-size:0.85rem;">
+      <input type="text" id="grid-rows" value="9" style="padding:8px; margin:0; font-size:0.85rem;">
+    </div>
+    <button class="btn btn-purple" onclick="resizeGrid()">Aplicar tamaño</button>
+  </div>
+
+  <div class="editor-main">
+    <div class="editor-topbar">
+      <input type="text" id="game-title-input" placeholder="Nombre de tu juego" maxlength="30">
+      <div class="editor-actions">
+        <button class="btn btn-turquoise" onclick="testPlay()">▶ Probar</button>
+        <button class="btn btn-coral" onclick="saveGame()">💾 Guardar</button>
+        <button class="btn btn-yellow" onclick="goHome()">✕ Cerrar</button>
+      </div>
+    </div>
+    <div class="editor-canvas-wrap">
+      <div id="grid"></div>
+    </div>
+    <div class="editor-help">
+      Arrastra un bloque de la izquierda hacia la cuadrícula para colocarlo. Coloca un <b>Jugador</b>, una <b>Meta</b>, algunas <b>Plataformas</b>, y opcionalmente <b>Monedas</b> y <b>Pinchos</b>.
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PLAYER SCREEN ===================== -->
+<div id="screen-player" class="screen">
+  <div class="player-topbar">
+    <div class="player-stats">
+      <span>❤ <span id="stat-lives">3</span></span>
+      <span>★ <span id="stat-score">0</span></span>
+    </div>
+    <button class="btn btn-yellow" style="width:auto; padding:8px 18px;" onclick="exitPlayer()">✕ Salir</button>
+  </div>
+  <div id="gameCanvasWrap">
+    <canvas id="gameCanvas"></canvas>
+    <div class="player-overlay hidden" id="player-overlay">
+      <h2 id="overlay-title"></h2>
+      <p id="overlay-text" style="color:var(--text-dim);"></p>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-turquoise" onclick="restartLevel()">↻ Reintentar</button>
+        <button class="btn btn-yellow" id="overlay-exit-btn" onclick="exitPlayer()">Salir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== CUSTOMIZE MODAL ===================== -->
+<div id="customize-modal" class="modal-overlay hidden">
+  <div class="auth-box" style="width:340px; max-height:85vh; overflow-y:auto;">
+    <h2 style="margin-bottom:4px;">Personaliza tu cubo</h2>
+    <p class="auth-sub">Elige el color y la skin de tu cubo</p>
+    <div class="cube-preview-wrap">
+      <div class="cube-preview" id="cube-preview"></div>
+    </div>
+    <p class="color-pick-label">Color</p>
+    <div class="color-pick" id="custom-color-pick"></div>
+    <p class="color-pick-label">Skin</p>
+    <div class="color-pick" id="custom-skin-pick"></div>
+    <div id="skin-progress" style="margin:14px 0; text-align:left;"></div>
+    <div style="display:flex; gap:10px; margin-top:6px;">
+      <button class="btn btn-yellow" onclick="closeCustomize()">Cancelar</button>
+      <button class="btn btn-turquoise" onclick="saveCustomize()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* =================================================================
+   DATA / STORAGE
+================================================================= */
+const AVATAR_COLORS = ['#ff6b6b','#4ecdc4','#ffe66d','#a374ff','#6bff8e','#ff9f4e'];
+const SKINS = [
+  {id:'smiley', emoji:'🙂', label:'Carita', unlock:null},
+  {id:'robot',  emoji:'🤖', label:'Robot', unlock:null},
+  {id:'ghost',  emoji:'👻', label:'Fantasma', unlock:null},
+  {id:'star',   emoji:'⭐', label:'Estrella', unlock:{type:'gamesCreated', value:1, desc:'Crea tu primer juego'}},
+  {id:'fire',   emoji:'🔥', label:'Fuego', unlock:{type:'levelsCompleted', value:1, desc:'Completa 1 nivel'}},
+  {id:'alien',  emoji:'👽', label:'Alien', unlock:{type:'levelsCompleted', value:5, desc:'Completa 5 niveles'}},
+  {id:'crown',  emoji:'👑', label:'Corona', unlock:{type:'levelsCompleted', value:10, desc:'Completa 10 niveles'}},
+  {id:'rocket', emoji:'🚀', label:'Cohete', unlock:{type:'coins', value:50, desc:'Junta 50 monedas en total'}},
+  {id:'diamond',emoji:'💎', label:'Diamante', unlock:{type:'coins', value:150, desc:'Junta 150 monedas en total'}},
+  {id:'wizard', emoji:'🧙', label:'Mago', unlock:{type:'gamesCreated', value:3, desc:'Crea 3 juegos'}},
+  {id:'ninja',  emoji:'🥷', label:'Ninja', unlock:{type:'noLives', value:1, desc:'Gana un nivel sin perder vidas'}},
+  {id:'dino',   emoji:'🦖', label:'Dino', unlock:{type:'levelsCompleted', value:20, desc:'Completa 20 niveles'}}
+];
+let selectedAvatarColor = AVATAR_COLORS[0];
+let selectedSkin = SKINS[0].id;
+let currentUser = null;
+
+const TILE = {
+  empty:  {emoji:'',   color:'transparent'},
+  ground: {emoji:'',   color:'#6b7a99'},
+  player: {emoji:'🙂', color:'#4ecdc4'},
+  coin:   {emoji:'★',  color:'#ffe66d'},
+  spike:  {emoji:'▲',  color:'#ff6b6b'},
+  goal:   {emoji:'🏁', color:'#a374ff'}
+};
+
+function loadUsers(){ return JSON.parse(localStorage.getItem('rb_users')||'{}'); }
+function saveUsers(u){ localStorage.setItem('rb_users', JSON.stringify(u)); }
+function loadGames(){ return JSON.parse(localStorage.getItem('rb_games')||'[]'); }
+function saveGames(g){ localStorage.setItem('rb_games', JSON.stringify(g)); }
+
+/* ---- User stats (for skin unlocks) ---- */
+function loadStats(){ return JSON.parse(localStorage.getItem('rb_stats')||'{}'); }
+function saveStats(s){ localStorage.setItem('rb_stats', JSON.stringify(s)); }
+function getUserStats(username){
+  const all = loadStats();
+  if(!all[username]) all[username] = {gamesCreated:0, levelsCompleted:0, coins:0, noLives:0};
+  return all[username];
+}
+function setUserStats(username, stats){
+  const all = loadStats();
+  all[username] = stats;
+  saveStats(all);
+}
+function isSkinUnlocked(skin, stats){
+  if(!skin.unlock) return true;
+  const val = stats[skin.unlock.type] || 0;
+  return val >= skin.unlock.value;
+}
+// Returns array of newly-unlocked skin objects (compares before/after stats)
+function getNewlyUnlocked(beforeStats, afterStats){
+  return SKINS.filter(sk=>{
+    if(!sk.unlock) return false;
+    const was = (beforeStats[sk.unlock.type]||0) >= sk.unlock.value;
+    const now = (afterStats[sk.unlock.type]||0) >= sk.unlock.value;
+    return !was && now;
+  });
+}
+
+/* Featured / built-in games (always present, read-only) */
+const FEATURED = [
+  {
+    id:'featured_jump', title:'Saltos Turquesa', emoji:'🪙', color:'#4ecdc4', author:'DashBlock',
+    cols:14, rows:9,
+    grid: buildFeaturedJump()
+  },
+  {
+    id:'featured_spike', title:'Esquiva Pinchos', emoji:'⚠️', color:'#ff6b6b', author:'DashBlock',
+    cols:14, rows:9,
+    grid: buildFeaturedSpikes()
+  },
+  {
+    id:'featured_stairs', title:'Escalera al Cielo', emoji:'🪜', color:'#a374ff', author:'DashBlock',
+    cols:14, rows:9,
+    grid: buildFeaturedStairs()
+  },
+  {
+    id:'featured_coinrun', title:'Carrera de Monedas', emoji:'💰', color:'#ffe66d', author:'DashBlock',
+    cols:16, rows:9,
+    grid: buildFeaturedCoinRun()
+  },
+  {
+    id:'featured_zigzag', title:'Zigzag Mortal', emoji:'⚡', color:'#ff6b6b', author:'DashBlock',
+    cols:16, rows:9,
+    grid: buildFeaturedZigzag()
+  },
+  {
+    id:'featured_towers', title:'Torres Gemelas', emoji:'🏙️', color:'#4ecdc4', author:'DashBlock',
+    cols:14, rows:9,
+    grid: buildFeaturedTowers()
+  },
+  {
+    id:'featured_pitfall', title:'Salto de Fe', emoji:'🕳️', color:'#6bff8e', author:'DashBlock',
+    cols:14, rows:9,
+    grid: buildFeaturedPitfall()
+  },
+  {
+    id:'featured_gauntlet', title:'El Desafío Final', emoji:'🔥', color:'#ff9f4e', author:'DashBlock',
+    cols:18, rows:9,
+    grid: buildFeaturedGauntlet()
+  }
+];
+
+function emptyGrid(cols, rows){
+  return Array.from({length:rows}, ()=>Array.from({length:cols}, ()=>'empty'));
+}
+
+function buildFeaturedJump(){
+  const cols=14, rows=9;
+  const g = emptyGrid(cols, rows);
+  // floor
+  for(let c=0;c<cols;c++) g[rows-1][c]='ground';
+  g[rows-1][7]='empty'; g[rows-2][7]='empty'; // gap (not used by simple engine but kept for visuals)
+  g[rows-1][1]='player';
+  g[rows-1][13]='goal';
+  // some platforms
+  g[rows-3][4]='ground'; g[rows-3][5]='ground';
+  g[rows-4][8]='ground'; g[rows-4][9]='ground';
+  // coins
+  g[rows-2][4]='coin'; g[rows-2][8]='coin'; g[rows-2][11]='coin';
+  return g;
+}
+
+function buildFeaturedSpikes(){
+  const cols=14, rows=9;
+  const g = emptyGrid(cols, rows);
+  for(let c=0;c<cols;c++) g[rows-1][c]='ground';
+  g[rows-1][1]='player';
+  g[rows-1][13]='goal';
+  [3,5,7,9,11].forEach(c=> g[rows-2][c]='spike');
+  [4,6,8,10,12].forEach(c=> g[rows-2][c]='coin');
+  return g;
+}
+
+function buildFeaturedStairs(){
+  const cols=14, rows=9;
+  const g = emptyGrid(cols, rows);
+  for(let c=0;c<cols;c++) g[rows-1][c]='ground';
+  g[rows-1][0]='player';
+  // ascending staircase of platforms
+  for(let i=0;i<6;i++){
+    const x = 2+i*2;
+    const y = rows-2-i;
+    g[y][x]='ground';
+    if(y-1>=0) g[y-1][x]='coin';
+  }
+  g[0][12]='ground'; g[0][13]='goal';
+  return g;
+}
+
+function buildFeaturedCoinRun(){
+  const cols=16, rows=9;
+  const g = emptyGrid(cols, rows);
+  for(let c=0;c<cols;c++) g[rows-1][c]='ground';
+  g[rows-1][0]='player';
+  g[rows-1][15]='goal';
+  // long row of coins along the floor with a few floating platforms
+  for(let c=2;c<14;c+=2) g[rows-2][c]='coin';
+  g[rows-3][6]='ground'; g[rows-3][7]='ground';
+  g[rows-4][6]='coin'; g[rows-4][7]='coin';
+  g[rows-3][11]='ground';
+  g[rows-4][11]='coin';
+  return g;
+}
+
+function buildFeaturedZigzag(){
+  const cols=16, rows=9;
+  const g = emptyGrid(cols, rows);
+  for(let c=0;c<cols;c++) g[rows-1][c]='ground';
+  g[rows-1][0]='player';
+  g[rows-1][15]='goal';
+  // alternating spikes on floor and a high platform path
+  [2,4,6,8,10,12].forEach(c=> g[rows-2][c]='spike');
+  [3,5,7,9,11,13].forEach(c=> g[rows-2][c]='coin');
+  return g;
+}
+
+function buildFeaturedTowers(){
+  const cols=14, rows=9;
+  const g = emptyGrid(cols, rows);
+  for(let c=0;c<cols;c++) g[rows-1][c]='ground';
+  g[rows-1][0]='player';
+  g[rows-1][13]='goal';
+  // two tall towers to climb over
+  for(let y=rows-2;y>=rows-5;y--){ g[y][4]='ground'; g[y][9]='ground'; }
+  g[rows-6][4]='coin'; g[rows-6][9]='coin';
+  // small platform between the towers
+  g[rows-3][6]='ground'; g[rows-3][7]='ground';
+  g[rows-4][6]='coin';
+  return g;
+}
+
+function buildFeaturedPitfall(){
+  const cols=14, rows=9;
+  const g = emptyGrid(cols, rows);
+  for(let c=0;c<cols;c++) g[rows-1][c]='ground';
+  g[rows-1][0]='player';
+  // a pit of spikes the player must jump across using floating platforms
+  [4,5,6,7].forEach(c=> g[rows-1][c]='spike');
+  g[rows-3][3]='ground';
+  g[rows-3][8]='ground';
+  g[rows-2][5]='coin'; g[rows-2][6]='coin';
+  g[rows-1][13]='goal';
+  return g;
+}
+
+function buildFeaturedGauntlet(){
+  const cols=18, rows=9;
+  const g = emptyGrid(cols, rows);
+  for(let c=0;c<cols;c++) g[rows-1][c]='ground';
+  g[rows-1][0]='player';
+  g[rows-1][17]='goal';
+  // mixed obstacle course: spikes, coins, and stepped platforms
+  [2,3].forEach(c=> g[rows-2][c]='spike');
+  g[rows-2][5]='coin';
+  g[rows-3][7]='ground'; g[rows-4][7]='coin';
+  [9,10].forEach(c=> g[rows-2][c]='spike');
+  g[rows-3][12]='ground'; g[rows-2][12]='ground';
+  g[rows-4][12]='coin';
+  g[rows-2][14]='spike'; g[rows-2][15]='coin'; g[rows-2][16]='coin';
+  return g;
+}
+
+/* =================================================================
+   AUTH
+================================================================= */
+function buildColorPicker(containerId, selectedColor, onSelect){
+  const wrap = document.getElementById(containerId);
+  wrap.innerHTML='';
+  AVATAR_COLORS.forEach(c=>{
+    const sw = document.createElement('div');
+    sw.className = 'swatch'+(c===selectedColor?' selected':'');
+    sw.style.background = c;
+    sw.onclick = ()=>{
+      wrap.querySelectorAll('.swatch').forEach(s=>s.classList.remove('selected'));
+      sw.classList.add('selected');
+      onSelect(c);
+    };
+    wrap.appendChild(sw);
+  });
+}
+
+function buildSkinPicker(containerId, selectedSkinId, onSelect, stats){
+  const wrap = document.getElementById(containerId);
+  wrap.innerHTML='';
+  // stats null/undefined => treat all base (no-unlock) skins as available, locked ones shown locked
+  const effectiveStats = stats || {};
+  SKINS.forEach(s=>{
+    const unlocked = isSkinUnlocked(s, effectiveStats);
+    const sw = document.createElement('div');
+    sw.className = 'swatch'+(s.id===selectedSkinId?' selected':'')+(unlocked?'':' locked');
+    sw.style.background = 'var(--bg-card)';
+    sw.style.display='flex'; sw.style.alignItems='center'; sw.style.justifyContent='center';
+    sw.style.fontSize='1.1rem';
+    sw.style.position='relative';
+    sw.title = unlocked ? s.label : `${s.label} (bloqueada: ${s.unlock.desc})`;
+    sw.textContent = unlocked ? s.emoji : '🔒';
+    if(!unlocked) sw.style.opacity='0.45';
+    sw.onclick = ()=>{
+      if(!unlocked){
+        sw.classList.add('shake');
+        setTimeout(()=>sw.classList.remove('shake'), 350);
+        return;
+      }
+      wrap.querySelectorAll('.swatch').forEach(el=>el.classList.remove('selected'));
+      sw.classList.add('selected');
+      onSelect(s.id);
+    };
+    wrap.appendChild(sw);
+  });
+}
+
+function initColorPicker(){
+  buildColorPicker('color-pick', selectedAvatarColor, c=> selectedAvatarColor=c);
+  buildSkinPicker('skin-pick', selectedSkin, s=> selectedSkin=s);
+}
+
+function switchTab(which){
+  document.getElementById('tab-login').classList.toggle('active', which==='login');
+  document.getElementById('tab-register').classList.toggle('active', which==='register');
+  document.getElementById('form-login').classList.toggle('hidden', which!=='login');
+  document.getElementById('form-register').classList.toggle('hidden', which!=='register');
+  document.getElementById('login-error').textContent='';
+  document.getElementById('reg-error').textContent='';
+}
+
+function doRegister(){
+  const u = document.getElementById('reg-username').value.trim();
+  const p = document.getElementById('reg-password').value;
+  const err = document.getElementById('reg-error');
+  if(!u || !p){ err.textContent = 'Completa usuario y contraseña.'; return; }
+  if(u.length<3){ err.textContent = 'El usuario debe tener al menos 3 caracteres.'; return; }
+  const users = loadUsers();
+  if(users[u]){ err.textContent = 'Ese usuario ya existe.'; return; }
+  users[u] = { password:p, color:selectedAvatarColor, skin:selectedSkin };
+  saveUsers(users);
+  err.textContent='';
+  loginAs(u);
+}
+
+function doLogin(){
+  const u = document.getElementById('login-username').value.trim();
+  const p = document.getElementById('login-password').value;
+  const err = document.getElementById('login-error');
+  const users = loadUsers();
+  if(!users[u] || users[u].password !== p){
+    err.textContent = 'Usuario o contraseña incorrectos.';
+    return;
+  }
+  err.textContent='';
+  loginAs(u);
+}
+
+function loginAs(username){
+  const users = loadUsers();
+  const u = users[username];
+  if(!u.skin) u.skin = SKINS[0].id; // compatibilidad con cuentas creadas antes de skins
+  currentUser = { name:username, color: u.color, skin: u.skin };
+  localStorage.setItem('rb_session', username);
+  document.getElementById('home-username').innerHTML = escapeHtml(username) +
+    (VERIFIED_ACCOUNTS.includes(username) ? ' <span class="verified-badge" title="Cuenta oficial">✔</span>' : '');
+  document.getElementById('home-greet-name').innerHTML = escapeHtml(username) +
+    (VERIFIED_ACCOUNTS.includes(username) ? ' <span class="verified-badge" title="Cuenta oficial">✔</span>' : '');
+  const av = document.getElementById('home-avatar');
+  av.style.background = currentUser.color;
+  av.textContent = SKINS.find(s=>s.id===currentUser.skin)?.emoji || '🙂';
+  showScreen('home');
+  renderHome();
+}
+
+function logout(){
+  localStorage.removeItem('rb_session');
+  currentUser = null;
+  showScreen('auth');
+  document.getElementById('login-username').value='';
+  document.getElementById('login-password').value='';
+}
+
+function tryAutoLogin(){
+  const session = localStorage.getItem('rb_session');
+  const users = loadUsers();
+  if(session && users[session]){
+    loginAs(session);
+  }
+}
+
+/* =================================================================
+   CUSTOMIZE (skin & color)
+================================================================= */
+let customizeColor, customizeSkin;
+
+function openCustomize(){
+  customizeColor = currentUser.color;
+  customizeSkin = currentUser.skin;
+  updateCubePreview();
+  const stats = getUserStats(currentUser.name);
+  buildColorPicker('custom-color-pick', customizeColor, c=>{
+    customizeColor = c; updateCubePreview();
+  });
+  buildSkinPicker('custom-skin-pick', customizeSkin, s=>{
+    customizeSkin = s; updateCubePreview();
+  }, stats);
+  renderSkinProgress(stats);
+  document.getElementById('customize-modal').classList.remove('hidden');
+}
+
+function showUnlockToast(skins){
+  skins.forEach((s,i)=>{
+    setTimeout(()=>{
+      const toast = document.createElement('div');
+      toast.className='unlock-toast';
+      toast.innerHTML = `<h4>${s.emoji} ¡Nueva skin desbloqueada!</h4><p>${escapeHtml(s.label)} ya está disponible en Personalizar.</p>`;
+      document.body.appendChild(toast);
+      setTimeout(()=> toast.remove(), 4500);
+    }, i*300);
+  });
+}
+
+function renderSkinProgress(stats){
+  const box = document.getElementById('skin-progress');
+  const locked = SKINS.filter(s=> s.unlock && !isSkinUnlocked(s, stats));
+  if(locked.length===0){
+    box.innerHTML = '<p style="color:var(--text-dim); font-size:0.85rem;">¡Has desbloqueado todas las skins! 🎉</p>';
+    return;
+  }
+  box.innerHTML = '<p class="color-pick-label" style="margin-bottom:8px;">Próximas skins por desbloquear</p>' +
+    locked.map(s=>{
+      const cur = stats[s.unlock.type]||0;
+      const pct = Math.min(100, Math.round((cur/s.unlock.value)*100));
+      return `<div style="margin-bottom:8px; font-size:0.82rem; color:var(--text-dim);">
+        <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+          <span>${s.emoji} ${escapeHtml(s.label)} — ${escapeHtml(s.unlock.desc)}</span>
+          <span>${cur}/${s.unlock.value}</span>
+        </div>
+        <div style="background:var(--bg-card); border-radius:6px; height:6px; overflow:hidden;">
+          <div style="background:var(--turquoise); height:100%; width:${pct}%;"></div>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+function updateCubePreview(){
+  const prev = document.getElementById('cube-preview');
+  prev.style.background = customizeColor;
+  prev.textContent = SKINS.find(s=>s.id===customizeSkin)?.emoji || '🙂';
+}
+
+function closeCustomize(){
+  document.getElementById('customize-modal').classList.add('hidden');
+}
+
+function saveCustomize(){
+  const users = loadUsers();
+  users[currentUser.name].color = customizeColor;
+  users[currentUser.name].skin = customizeSkin;
+  saveUsers(users);
+  currentUser.color = customizeColor;
+  currentUser.skin = customizeSkin;
+  const av = document.getElementById('home-avatar');
+  av.style.background = currentUser.color;
+  av.textContent = SKINS.find(s=>s.id===currentUser.skin)?.emoji || '🙂';
+  closeCustomize();
+}
+
+/* =================================================================
+   NAVIGATION
+================================================================= */
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+}
+function goHome(){ showScreen('home'); renderHome(); }
+
+/* =================================================================
+   HOME / LIBRARY
+================================================================= */
+function renderHome(){
+  const fGrid = document.getElementById('featured-grid');
+  fGrid.innerHTML='';
+  FEATURED.forEach(g=>{
+    fGrid.appendChild(makeGameCard(g, false));
+  });
+
+  const myGrid = document.getElementById('mygames-grid');
+  myGrid.innerHTML='';
+  const myGames = loadGames().filter(g=>g.author===currentUser.name);
+
+  // "create new" card
+  const createCard = document.createElement('div');
+  createCard.className = 'game-card create-card';
+  createCard.innerHTML = `<div class="plus">+</div><div>Crear juego nuevo</div>`;
+  createCard.onclick = ()=> openEditor(null);
+  myGrid.appendChild(createCard);
+
+  myGames.forEach(g=>{
+    myGrid.appendChild(makeGameCard(g, true));
+  });
+}
+
+function makeGameCard(g, mine){
+  const card = document.createElement('div');
+  card.className='game-card';
+  const thumb = document.createElement('div');
+  thumb.className='thumb';
+  thumb.style.background = g.color || 'var(--bg-card)';
+  thumb.textContent = g.emoji || '🎮';
+  const info = document.createElement('div');
+  info.className='game-info';
+  const authorLabel = mine ? 'Por ti' : 'Por ' + escapeHtml(g.author) +
+    (VERIFIED_ACCOUNTS.includes(g.author) ? ' <span class="verified-badge" title="Cuenta oficial">✔</span>' : '');
+  info.innerHTML = `<h4>${escapeHtml(g.title)}</h4><div class="meta">${authorLabel}</div>`;
+  card.appendChild(thumb);
+  card.appendChild(info);
+
+  card.onclick = ()=> playGame(g);
+
+  if(mine){
+    const editBtn = document.createElement('button');
+    editBtn.className='icon-btn';
+    editBtn.style.cssText='position:absolute;';
+    // simple: clicking card edits if mine via secondary action row
+    const actions = document.createElement('div');
+    actions.style.cssText='display:flex; gap:6px; padding:0 14px 12px;';
+    const eBtn = document.createElement('button');
+    eBtn.className='btn btn-yellow'; eBtn.style.cssText='width:auto; padding:6px 12px; font-size:0.8rem;';
+    eBtn.textContent='✏ Editar';
+    eBtn.onclick = (e)=>{ e.stopPropagation(); openEditor(g); };
+    const dBtn = document.createElement('button');
+    dBtn.className='btn btn-coral'; dBtn.style.cssText='width:auto; padding:6px 12px; font-size:0.8rem;';
+    dBtn.textContent='🗑';
+    dBtn.onclick = (e)=>{ e.stopPropagation(); deleteGame(g.id); };
+    actions.appendChild(eBtn); actions.appendChild(dBtn);
+    card.appendChild(actions);
+  }
+  return card;
+}
+
+function deleteGame(id){
+  if(!confirm('¿Eliminar este juego?')) return;
+  let games = loadGames();
+  games = games.filter(g=>g.id!==id);
+  saveGames(games);
+  renderHome();
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+/* =================================================================
+   EDITOR
+================================================================= */
+let editorGrid = [];
+let editorCols = 14, editorRows = 9;
+let editingGameId = null;
+
+function openEditor(game){
+  showScreen('editor');
+  if(game){
+    editingGameId = game.id;
+    editorCols = game.cols;
+    editorRows = game.rows;
+    editorGrid = game.grid.map(row=>row.slice());
+    document.getElementById('game-title-input').value = game.title;
+  } else {
+    editingGameId = null;
+    editorCols = 14; editorRows = 9;
+    editorGrid = emptyGrid(editorCols, editorRows);
+    document.getElementById('game-title-input').value = '';
+  }
+  document.getElementById('grid-cols').value = editorCols;
+  document.getElementById('grid-rows').value = editorRows;
+  renderGrid();
+}
+
+function resizeGrid(){
+  let c = parseInt(document.getElementById('grid-cols').value) || 14;
+  let r = parseInt(document.getElementById('grid-rows').value) || 9;
+  c = Math.max(5, Math.min(24, c));
+  r = Math.max(5, Math.min(14, r));
+  const newGrid = emptyGrid(c, r);
+  for(let y=0;y<Math.min(r, editorRows);y++){
+    for(let x=0;x<Math.min(c, editorCols);x++){
+      newGrid[y][x] = editorGrid[y][x];
+    }
+  }
+  editorGrid = newGrid;
+  editorCols=c; editorRows=r;
+  document.getElementById('grid-cols').value=c;
+  document.getElementById('grid-rows').value=r;
+  renderGrid();
+}
+
+function renderGrid(){
+  const grid = document.getElementById('grid');
+  grid.style.gridTemplateColumns = `repeat(${editorCols}, 40px)`;
+  grid.innerHTML='';
+  for(let y=0;y<editorRows;y++){
+    for(let x=0;x<editorCols;x++){
+      const cell = document.createElement('div');
+      cell.className='cell';
+      cell.dataset.x=x; cell.dataset.y=y;
+      paintCell(cell, editorGrid[y][x]);
+      cell.addEventListener('dragover', e=>e.preventDefault());
+      cell.addEventListener('drop', e=>{
+        e.preventDefault();
+        const type = e.dataTransfer.getData('type');
+        if(type) placeTile(x,y,type);
+      });
+      cell.addEventListener('click', ()=>{
+        // click cycles: empty -> ground -> empty (quick toggle), but mainly drag is primary
+        if(editorGrid[y][x]==='empty') placeTile(x,y,'ground');
+        else placeTile(x,y,'empty');
+      });
+      grid.appendChild(cell);
+    }
+  }
+}
+
+function paintCell(cell, type){
+  const t = TILE[type] || TILE.empty;
+  cell.textContent = t.emoji;
+  cell.style.background = type==='empty' ? '' : t.color;
+  cell.classList.toggle('filled-empty', type==='empty');
+}
+
+function placeTile(x,y,type){
+  // enforce single player & single goal
+  if(type==='player' || type==='goal'){
+    for(let yy=0;yy<editorRows;yy++)
+      for(let xx=0;xx<editorCols;xx++)
+        if(editorGrid[yy][xx]===type) editorGrid[yy][xx]='empty';
+  }
+  editorGrid[y][x] = type;
+  renderGrid();
+}
+
+// drag start from palette
+document.querySelectorAll('.palette-item').forEach(item=>{
+  item.addEventListener('dragstart', e=>{
+    e.dataTransfer.setData('type', item.dataset.type);
+  });
+});
+
+function validateGrid(grid, cols, rows){
+  let hasPlayer=false, hasGoal=false;
+  for(let y=0;y<rows;y++) for(let x=0;x<cols;x++){
+    if(grid[y][x]==='player') hasPlayer=true;
+    if(grid[y][x]==='goal') hasGoal=true;
+  }
+  if(!hasPlayer) return 'Coloca un bloque de Jugador para indicar dónde empieza.';
+  if(!hasGoal) return 'Coloca un bloque de Meta para indicar dónde termina el nivel.';
+  return null;
+}
+
+function saveGame(){
+  const title = document.getElementById('game-title-input').value.trim();
+  if(!title){ alert('Dale un nombre a tu juego.'); return; }
+  const err = validateGrid(editorGrid, editorCols, editorRows);
+  if(err){ alert(err); return; }
+
+  let games = loadGames();
+  const colors = ['#ff6b6b','#4ecdc4','#ffe66d','#a374ff','#6bff8e'];
+  let isNewGame = !editingGameId;
+  if(editingGameId){
+    const idx = games.findIndex(g=>g.id===editingGameId);
+    games[idx] = {...games[idx], title, grid: editorGrid, cols:editorCols, rows:editorRows};
+  } else {
+    games.push({
+      id: 'g_'+Date.now(),
+      title, author: currentUser.name,
+      cols: editorCols, rows: editorRows, grid: editorGrid,
+      emoji: '🎮', color: colors[Math.floor(Math.random()*colors.length)]
+    });
+  }
+  saveGames(games);
+
+  if(isNewGame){
+    const before = {...getUserStats(currentUser.name)};
+    const stats = getUserStats(currentUser.name);
+    stats.gamesCreated = (stats.gamesCreated||0) + 1;
+    setUserStats(currentUser.name, stats);
+    const unlocked = getNewlyUnlocked(before, stats);
+    if(unlocked.length){
+      alert('¡Juego guardado!');
+      showUnlockToast(unlocked);
+    } else {
+      alert('¡Juego guardado!');
+    }
+  } else {
+    alert('¡Juego guardado!');
+  }
+  goHome();
+}
+
+function testPlay(){
+  const err = validateGrid(editorGrid, editorCols, editorRows);
+  if(err){ alert(err); return; }
+  const tempGame = {
+    id:'__test__', title: document.getElementById('game-title-input').value || 'Sin título',
+    cols:editorCols, rows:editorRows, grid: editorGrid.map(r=>r.slice()),
+    _returnTo:'editor'
+  };
+  playGame(tempGame);
+}
+
+/* =================================================================
+   PLAYER / GAME ENGINE (simple grid-based platformer)
+================================================================= */
+let activeGame = null;
+let returnTo = 'home';
+let canvas, ctx, cellSize;
+let player = {x:0,y:0,vx:0,vy:0,onGround:false};
+let lives=3, score=0, gameRunning=false;
+let livesLostThisRun = false;
+let keys={};
+let collected = new Set();
+let rafId=null;
+
+function playGame(game){
+  activeGame = game;
+  returnTo = game._returnTo || 'home';
+  showScreen('player');
+  document.getElementById('player-overlay').classList.add('hidden');
+  initLevel();
+  startLoop();
+}
+
+function exitPlayer(){
+  cancelAnimationFrame(rafId);
+  rafId = null;
+  gameRunning=false;
+  if(returnTo==='editor'){ showScreen('editor'); }
+  else { showScreen('home'); renderHome(); }
+}
+
+function restartLevel(){
+  document.getElementById('player-overlay').classList.add('hidden');
+  initLevel();
+  startLoop();
+}
+
+function initLevel(){
+  const g = activeGame;
+  canvas = document.getElementById('gameCanvas');
+  ctx = canvas.getContext('2d');
+  cellSize = Math.min(48, Math.floor(Math.min(window.innerWidth*0.9, 760) / g.cols));
+  canvas.width = g.cols * cellSize;
+  canvas.height = g.rows * cellSize;
+
+  lives=3; score=0; collected = new Set();
+  livesLostThisRun = false;
+  document.getElementById('stat-lives').textContent = lives;
+  document.getElementById('stat-score').textContent = score;
+
+  for(let y=0;y<g.rows;y++) for(let x=0;x<g.cols;x++){
+    if(g.grid[y][x]==='player'){
+      player.x = x*cellSize; player.y = y*cellSize;
+      player.vx=0; player.vy=0; player.onGround=false;
+    }
+  }
+  gameRunning = true;
+}
+
+window.addEventListener('keydown', e=>{
+  keys[e.key]=true;
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+});
+window.addEventListener('keyup', e=> keys[e.key]=false);
+
+// touch controls (simple: tap left/right halves to move, tap top to jump) - basic support
+let touchLeft=false, touchRight=false, touchJump=false;
+
+function isSolid(gx, gy){
+  const g = activeGame;
+  if(gx<0 || gx>=g.cols || gy>=g.rows) return true; // walls/floor edges solid
+  if(gy<0) return false;
+  return g.grid[gy][gx]==='ground';
+}
+
+function tileAt(gx,gy){
+  const g=activeGame;
+  if(gx<0||gx>=g.cols||gy<0||gy>=g.rows) return 'empty';
+  return g.grid[gy][gx];
+}
+
+function startLoop(){
+  if(rafId) cancelAnimationFrame(rafId);
+  function loop(){
+    if(gameRunning) update();
+    draw();
+    rafId = requestAnimationFrame(loop);
+  }
+  rafId = requestAnimationFrame(loop);
+}
+
+function update(){
+  const speed = 3.2;
+  const gravity = 0.55;
+  const jumpPower = -9.5;
+
+  player.vx = 0;
+  if(keys['ArrowLeft'] || keys['a'] || touchLeft) player.vx = -speed;
+  if(keys['ArrowRight'] || keys['d'] || touchRight) player.vx = speed;
+  if((keys['ArrowUp'] || keys[' '] || keys['w'] || touchJump) && player.onGround){
+    player.vy = jumpPower;
+    player.onGround = false;
+  }
+
+  player.vy += gravity;
+  if(player.vy > 14) player.vy = 14; // límite de velocidad de caída
+
+  // horizontal move + collision
+  let newX = player.x + player.vx;
+  const pSize = cellSize*0.8;
+  const margin = (cellSize-pSize)/2;
+  if(!collidesAt(newX, player.y, pSize)) player.x = newX;
+
+  // vertical move + collision
+  let newY = player.y + player.vy;
+  if(!collidesAt(player.x, newY, pSize)){
+    player.y = newY;
+    player.onGround = false;
+  } else {
+    if(player.vy > 0) player.onGround = true;
+    player.vy = 0;
+  }
+
+  // bounds
+  if(player.x < 0) player.x = 0;
+  if(player.x > (activeGame.cols-1)*cellSize) player.x = (activeGame.cols-1)*cellSize;
+  if(player.y > activeGame.rows*cellSize + 100){
+    loseLife();
+  }
+
+  // check tile interactions under player's center
+  const cx = Math.floor((player.x + cellSize/2)/cellSize);
+  const cy = Math.floor((player.y + cellSize/2)/cellSize);
+  const key = cx+','+cy;
+  const tile = tileAt(cx,cy);
+
+  if(tile==='coin' && !collected.has(key)){
+    collected.add(key);
+    score += 10;
+    document.getElementById('stat-score').textContent = score;
+  }
+  if(tile==='spike'){
+    loseLife();
+  }
+  if(tile==='goal'){
+    winLevel();
+  }
+}
+
+function collidesAt(x,y,size){
+  const pad = (cellSize - size)/2;
+  const corners = [
+    [x+pad, y+pad],
+    [x+size+pad-1, y+pad],
+    [x+pad, y+size+pad-1],
+    [x+size+pad-1, y+size+pad-1]
+  ];
+  for(const [px,py] of corners){
+    const gx = Math.floor(px/cellSize);
+    const gy = Math.floor(py/cellSize);
+    if(isSolid(gx,gy)) return true;
+  }
+  return false;
+}
+
+function loseLife(){
+  if(!gameRunning) return;
+  lives--;
+  livesLostThisRun = true;
+  document.getElementById('stat-lives').textContent = lives;
+  if(lives<=0){
+    gameRunning=false;
+    showOverlay('💀 ¡Game Over!', 'Te quedaste sin vidas.');
+  } else {
+    // respawn at start
+    for(let y=0;y<activeGame.rows;y++) for(let x=0;x<activeGame.cols;x++){
+      if(activeGame.grid[y][x]==='player'){ player.x=x*cellSize; player.y=y*cellSize; player.vx=0; player.vy=0; }
+    }
+  }
+}
+
+function winLevel(){
+  if(!gameRunning) return;
+  gameRunning=false;
+
+  // Don't track progress on test-plays from the editor (no permanent stats for unfinished levels)
+  if(activeGame.id !== '__test__'){
+    const before = {...getUserStats(currentUser.name)};
+    const stats = getUserStats(currentUser.name);
+    stats.levelsCompleted = (stats.levelsCompleted||0) + 1;
+    stats.coins = (stats.coins||0) + score/10; // score is coins*10
+    if(!livesLostThisRun) stats.noLives = (stats.noLives||0) + 1;
+    setUserStats(currentUser.name, stats);
+    const unlocked = getNewlyUnlocked(before, stats);
+    if(unlocked.length){
+      showOverlay('🏆 ¡Lo lograste!', `Puntaje final: ${score}`);
+      showUnlockToast(unlocked);
+      return;
+    }
+  }
+  showOverlay('🏆 ¡Lo lograste!', `Puntaje final: ${score}`);
+}
+
+function showOverlay(title, text){
+  document.getElementById('overlay-title').textContent = title;
+  document.getElementById('overlay-text').textContent = text;
+  document.getElementById('player-overlay').classList.remove('hidden');
+}
+
+function draw(){
+  const g = activeGame;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(let y=0;y<g.rows;y++) for(let x=0;x<g.cols;x++){
+    const t = g.grid[y][x];
+    const px=x*cellSize, py=y*cellSize;
+    if(t==='ground'){
+      ctx.fillStyle = '#6b7a99';
+      ctx.fillRect(px,py,cellSize,cellSize);
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.strokeRect(px+0.5,py+0.5,cellSize-1,cellSize-1);
+    } else if(t==='coin'){
+      const key=x+','+y;
+      if(!collected.has(key)){
+        ctx.fillStyle='#ffe66d';
+        ctx.beginPath();
+        ctx.arc(px+cellSize/2, py+cellSize/2, cellSize*0.22, 0, Math.PI*2);
+        ctx.fill();
+      }
+    } else if(t==='spike'){
+      ctx.fillStyle='#ff6b6b';
+      ctx.beginPath();
+      ctx.moveTo(px+cellSize/2, py+cellSize*0.15);
+      ctx.lineTo(px+cellSize*0.85, py+cellSize*0.85);
+      ctx.lineTo(px+cellSize*0.15, py+cellSize*0.85);
+      ctx.closePath();
+      ctx.fill();
+    } else if(t==='goal'){
+      ctx.fillStyle='#a374ff';
+      ctx.fillRect(px+cellSize*0.4, py, cellSize*0.1, cellSize);
+      ctx.beginPath();
+      ctx.moveTo(px+cellSize*0.5, py);
+      ctx.lineTo(px+cellSize*0.9, py+cellSize*0.18);
+      ctx.lineTo(px+cellSize*0.5, py+cellSize*0.36);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+  // player
+  ctx.fillStyle = currentUser ? currentUser.color : '#4ecdc4';
+  const pSize = cellSize*0.8;
+  const pad=(cellSize-pSize)/2;
+  roundRect(ctx, player.x+pad, player.y+pad, pSize, pSize, 6);
+  ctx.fill();
+  ctx.font = `${cellSize*0.45}px sans-serif`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  const playerEmoji = (currentUser && SKINS.find(s=>s.id===currentUser.skin)?.emoji) || '🙂';
+  ctx.fillText(playerEmoji, player.x+cellSize/2, player.y+cellSize/2+2);
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+/* =================================================================
+   INIT
+================================================================= */
+const VERIFIED_ACCOUNTS = ['DashBlock'];
+
+function seedOfficialAccount(){
+  const users = loadUsers();
+  if(!users['DashBlock']){
+    users['DashBlock'] = { password:'oficialDash', color:'#a374ff', skin:'crown' };
+    saveUsers(users);
+    // give the official account every skin unlocked from the start
+    const stats = getUserStats('DashBlock');
+    stats.gamesCreated = 99; stats.levelsCompleted = 99; stats.coins = 9999; stats.noLives = 99;
+    setUserStats('DashBlock', stats);
+  }
+}
+
+seedOfficialAccount();
+initColorPicker();
+tryAutoLogin();
+</script>
+</body>
+</html>
